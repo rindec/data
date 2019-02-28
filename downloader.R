@@ -1,7 +1,3 @@
-#
-library(devtools)
-install_github('https://github.com/rindec/eph')
-library(eph)
 library(tidyverse)
 library(purrr)
 
@@ -125,7 +121,7 @@ get_bases_eph0307 <- function(anio = 2017, trimestre = 4,etiqueta = FALSE, save=
   
   if (save) {
    saveRDS(object = base_hogar, file = glue::glue('eph/hogar/base_hogar_{anio}T{trimestre}.RDS'))
-   saveRDS(object = base_hogar, file = glue::glue('eph/individual/base_individual_{anio}T{trimestre}.RDS'))
+   saveRDS(object = base_individual, file = glue::glue('eph/individual/base_individual_{anio}T{trimestre}.RDS'))
     
   }
   
