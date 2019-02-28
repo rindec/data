@@ -1,5 +1,8 @@
 library(tidyverse)
 library(purrr)
+library(glue)
+library(haven)
+
 
 get_bases_eph0307 <- function(anio = 2017, trimestre = 4,etiqueta = FALSE, save=T){
   
@@ -127,16 +130,73 @@ get_bases_eph0307 <- function(anio = 2017, trimestre = 4,etiqueta = FALSE, save=
   
 }
 
-trimestres <- 1:4
-
-anios_full <- data.frame(anio=rep(c(2004:2006, 2017),4),trimestre = rep(trimestres,each=4))
-
-anios_resto <- data.frame(anio=c(rep(2003,2),2007,rep(2016, 3),rep(2018, 3)), 
-                          trimestre=c(3,4,1,2:4,1:3))
-
-periodos <- bind_rows(anios_full,anios_resto) %>% arrange(anio, trimestre)
+# trimestres <- 1:4
+# anios_full <- data.frame(anio=rep(c(2004:2006, 2017),4),trimestre = rep(trimestres,each=4))
+# anios_resto <- data.frame(anio=c(rep(2003,2),2007,rep(2016, 3),rep(2018, 3)), 
+#                           trimestre=c(3,4,1,2:4,1:3))
+# periodos <- bind_rows(anios_full,anios_resto) %>% arrange(anio, trimestre)
+# map2(.x = periodos$anio, .y = periodos$trimestre, get_bases_eph0307)
 
 
-map2(.x = periodos$anio, .y = periodos$trimestre, get_bases_eph0307)
+### bases 2007-2016
+
+folder <- '/home/diego/Downloads/drive-download'
+
+for (nano in 2014:2015) {
+  
+  subfolder <- glue('{folder}/{nano}')
+  zipfiles <- glue('{subfolder}/{list.files(subfolder)}')  
+  
+  for (zipfile in zipfiles) {
+    names <- zip::zip_list(zipfile)$filename
+    unzip(zipfile,exdir = subfolder)
+    name_hogar <- glue('{subfolder}/{names[str_detect(names,regex("hogar", ignore_case = T))]}')
+    name_indiv <- glue('{subfolder}/{names[str_detect(names,regex("indiv", ignore_case = T))]}')
+    name_txt <- glue('{subfolder}/{names[str_detect(names,regex("txt", ignore_case = T))]}')
+    trimestre <- gsub('t','',str_extract(zipfile,'t(.)'))
+    df_hogar <- read_sav(name_hogar)
+    df_individual <- read_sav(name_indiv)
+    saveRDS(df_hogar, file = glue("{folder}/hogar/base_hogar_{nano}T{trimestre}.RDS"))
+    saveRDS(df_individual, file = glue("{folder}/individual/base_individual_{nano}T{trimestre}.RDS"))
+    unlink(name_hogar)
+    unlink(name_indiv)
+    unlink(name_txt)
+    rm(df_individual)
+    rm(df_hogar)
+    gc()
+    }
+}
+
+
+### corrigiendo desprolijidades del indec
+
+
+
+folder <- '/home/diego/Downloads/drive-download'
+
+  subfolder <- glue('{folder}/dta')
+  zipfiles <- glue('{subfolder}/{list.files(subfolder)}')  
+  
+  for (zipfile in zipfiles) {
+    names <- zip::zip_list(zipfile)$filename
+    unzip(zipfile,exdir = subfolder)
+    name_hogar <- glue('{subfolder}/{names[str_detect(names,regex("hogar", ignore_case = T))]}')
+    name_indiv <- glue('{subfolder}/{names[str_detect(names,regex("indiv", ignore_case = T))]}')
+    name_txt <- glue('{subfolder}/{names[str_detect(names,regex("txt", ignore_case = T))]}')
+    nano <- paste0('20',gsub('t.','',str_extract(zipfile, 't[0-9]{3}')))
+    trimestre <- gsub('t','',str_extract(zipfile,'t[0-9]'))
+    df_hogar <- read_stata(name_hogar)
+    df_individual <- read_stata(name_indiv)
+    saveRDS(df_hogar, file = glue("{folder}/hogar/base_hogar_{nano}T{trimestre}.RDS"))
+    saveRDS(df_individual, file = glue("{folder}/individual/base_individual_{nano}T{trimestre}.RDS"))
+    unlink(name_hogar)
+    unlink(name_indiv)
+    unlink(name_txt)
+    rm(df_individual)
+    rm(df_hogar)
+    gc()
+  }
+
+
 
 
